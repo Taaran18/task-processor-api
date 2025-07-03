@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from transcribe_audio import transcribe_audio
 from transcribe_text import transcribe_text
@@ -34,7 +34,7 @@ def process(req: ProcessRequest):
                     status_code=400, detail="Missing Google Drive URL for audio choice."
                 )
             transcription, source_link = transcribe_audio(gdrive_url)
-        if choice == "text":
+        else:  # text
             transcription = text_input if text_input else transcribe_text()
             source_link = transcription
 
@@ -42,6 +42,36 @@ def process(req: ProcessRequest):
         rows = parse_structured_output(structured_output, choice, source_link)
         write_to_sheet(rows)
         return {"message": f"{len(rows)} structured tasks added."}
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/webhook")
+async def receive_whatsapp(request: Request):
+    try:
+        payload = await request.json()
+        message = payload.get("message", "")
+        sender = payload.get("from_number", "")
+
+        if message.lower().startswith("/task "):
+            command_text = message[6:]
+
+            transcription = command_text
+            structured_output = extract_tasks(transcription)
+            rows = parse_structured_output(structured_output, "text", transcription)
+            write_to_sheet(rows)
+
+            return {
+                "status": "✅ Task processed from WhatsApp",
+                "tasks_added": len(rows),
+                "from": sender,
+            }
+
+        return {
+            "status": "ignored",
+            "reason": "No /task trigger in message",
+            "from": sender,
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
