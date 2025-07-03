@@ -49,14 +49,16 @@ def process(req: ProcessRequest):
 @app.post("/webhook")
 async def receive_whatsapp(request: Request):
     try:
-        payload = await request.json()
-        message = payload.get("message", "")
-        sender = payload.get("from_number", "")
+        data = await request.json()
+        body = data.get("body", {})
+        message_data = body.get("message", {})
+        message_text = message_data.get("text", "")
+        sender = body.get("user", {}).get("phone", "")
 
-        if message.lower().startswith("/task "):
-            command_text = message[6:]
+        if isinstance(message_text, str) and message_text.lower().startswith("/task "):
+            command_text = message_text[6:]
 
-            # ✅ Log the message in the TEXT_INPUT_SHEET
+            # ✅ Log the message into your TEXT_INPUT_SHEET_ID sheet
             log_whatsapp_message(command_text)
 
             transcription = command_text
@@ -67,13 +69,13 @@ async def receive_whatsapp(request: Request):
             return {
                 "status": "✅ Task processed from WhatsApp",
                 "tasks_added": len(rows),
-                "from": sender,
+                "from": sender
             }
 
         return {
             "status": "ignored",
-            "reason": "No /task trigger in message",
-            "from": sender,
+            "reason": "No /task trigger in message or bad format",
+            "from": sender
         }
 
     except Exception as e:
