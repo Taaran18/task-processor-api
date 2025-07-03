@@ -44,7 +44,8 @@ def parse_structured_output(structured_output, choice, source_link=""):
                     assigned_email,
                     parts[7],
                 ]
-                if choice == "audio":
+                if choice in ["audio", "text"]:
                     row_data.append(source_link)
+
                 rows.append(row_data)
     return rows

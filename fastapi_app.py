@@ -36,8 +36,7 @@ def process(req: ProcessRequest):
             transcription, source_link = transcribe_audio(gdrive_url)
         if choice == "text":
             transcription = text_input if text_input else transcribe_text()
-            source_link = transcription  # use the actual text as source
-
+            source_link = transcription
 
         structured_output = extract_tasks(transcription)
         rows = parse_structured_output(structured_output, choice, source_link)
