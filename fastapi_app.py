@@ -34,8 +34,10 @@ def process(req: ProcessRequest):
                     status_code=400, detail="Missing Google Drive URL for audio choice."
                 )
             transcription, source_link = transcribe_audio(gdrive_url)
-        elif choice == "text":
+        if choice == "text":
             transcription = text_input if text_input else transcribe_text()
+            source_link = transcription  # use the actual text as source
+
 
         structured_output = extract_tasks(transcription)
         rows = parse_structured_output(structured_output, choice, source_link)

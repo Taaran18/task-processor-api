@@ -15,6 +15,8 @@ def main():
         transcription, source_link = transcribe_audio(gdrive_url)
     elif choice == "text":
         transcription = transcribe_text()
+        source_link = transcription
+
     else:
         raise ValueError("Invalid input. Use 'audio' or 'text'.")
 
