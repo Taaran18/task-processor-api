@@ -8,7 +8,8 @@ def write_to_sheet(rows):
     for row in rows:
         sheet.append_row(row)
 
+
 def log_whatsapp_message(message_text):
     client = authorize()
     sheet = client.open_by_key(TEXT_INPUT_SHEET_ID).sheet1
-    sheet.append_row([message_text])  # Adds message to column A, rest blank
+    sheet.append_row([message_text])  # saves in column A

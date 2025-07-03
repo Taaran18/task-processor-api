@@ -4,7 +4,7 @@ from transcribe_audio import transcribe_audio
 from transcribe_text import transcribe_text
 from extract_tasks import extract_tasks
 from parse_output import parse_structured_output
-from write_output import write_to_sheet, log_whatsapp_message
+from write_output import write_to_sheet, log_whatsapp_message  # ✅ new import
 
 app = FastAPI()
 
@@ -34,7 +34,8 @@ def process(req: ProcessRequest):
                     status_code=400, detail="Missing Google Drive URL for audio choice."
                 )
             transcription, source_link = transcribe_audio(gdrive_url)
-        else:  # text
+
+        elif choice == "text":
             transcription = text_input if text_input else transcribe_text()
             source_link = transcription
 
@@ -42,6 +43,7 @@ def process(req: ProcessRequest):
         rows = parse_structured_output(structured_output, choice, source_link)
         write_to_sheet(rows)
         return {"message": f"{len(rows)} structured tasks added."}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -58,9 +60,10 @@ async def receive_whatsapp(request: Request):
         if isinstance(message_text, str) and message_text.lower().startswith("/task "):
             command_text = message_text[6:]
 
-            # ✅ Log the message into your TEXT_INPUT_SHEET_ID sheet
+            # ✅ Log to text sheet
             log_whatsapp_message(command_text)
 
+            # ✅ Process the message as a task
             transcription = command_text
             structured_output = extract_tasks(transcription)
             rows = parse_structured_output(structured_output, "text", transcription)
@@ -69,13 +72,13 @@ async def receive_whatsapp(request: Request):
             return {
                 "status": "✅ Task processed from WhatsApp",
                 "tasks_added": len(rows),
-                "from": sender
+                "from": sender,
             }
 
         return {
             "status": "ignored",
             "reason": "No /task trigger in message or bad format",
-            "from": sender
+            "from": sender,
         }
 
     except Exception as e:
