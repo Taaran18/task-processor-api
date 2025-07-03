@@ -1,12 +1,20 @@
 import uuid
 from datetime import datetime
 from employee import load_employee_data
+import difflib
 
 
 def parse_structured_output(structured_output, choice, source_link=""):
     employee_data = load_employee_data()
     rows = []
     lines = structured_output.strip().split("\n")
+
+    # Preprocess the source link if it's text input
+    source_segments = []
+    if choice in ["audio", "text"] and source_link:
+        source_segments = [
+            s.strip() for s in source_link.strip().split("\n") if s.strip()
+        ]
 
     for line in lines:
         if line.strip() == "" or "---" in line:
@@ -29,30 +37,35 @@ def parse_structured_output(structured_output, choice, source_link=""):
                 emp_email = employee_data.get(emp_name, "")
                 assigned_name = parts[8]
                 assigned_email = employee_data.get(assigned_name, "")
-                row_data = [
-                    now,
-                    task_id,
-                    parts[0],
-                    emp_name,
-                    emp_email,
-                    parts[2],
-                    parts[3],
-                    parts[4],
-                    parts[5],
-                    parts[6],
-                    assigned_name,
-                    assigned_email,
-                    parts[7],
-                ]
-                if choice in ["audio", "text"]:
-                    matched_source = ""
-                    if source_link:
-                        for segment in source_link.strip().split("\n"):
-                            if parts[0].lower() in segment.lower():
-                                matched_source = segment.strip()
-                                break
-                    row_data.append(matched_source)
 
+                # Match the best source segment to the task description
+                matched_source = ""
+                if source_segments:
+                    best_match = difflib.get_close_matches(
+                        parts[0], source_segments, n=1, cutoff=0.3
+                    )
+                    if best_match:
+                        matched_source = best_match[0]
+
+                row_data = [
+                    now,  # Timestamp
+                    task_id,  # Task ID
+                    parts[0],  # Task Description
+                    emp_name,  # Employee Name
+                    emp_email,  # Employee Email
+                    parts[2],  # Target Date
+                    parts[3],  # Priority
+                    parts[4],  # Approval Needed
+                    parts[5],  # Client Name
+                    parts[6],  # Department
+                    assigned_name,  # Assigned By Name
+                    assigned_email,  # Assigned By Email
+                    parts[7],  # Comments
+                ]
+
+                if choice in ["audio", "text"]:
+                    row_data.append(matched_source)  # Source Link
 
                 rows.append(row_data)
+
     return rows
