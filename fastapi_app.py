@@ -4,7 +4,7 @@ from transcribe_audio import transcribe_audio
 from transcribe_text import transcribe_text
 from extract_tasks import extract_tasks
 from parse_output import parse_structured_output
-from write_output import write_to_sheet
+from write_output import write_to_sheet, log_whatsapp_message
 
 app = FastAPI()
 
@@ -55,6 +55,9 @@ async def receive_whatsapp(request: Request):
 
         if message.lower().startswith("/task "):
             command_text = message[6:]
+
+            # ✅ Log the message in the TEXT_INPUT_SHEET
+            log_whatsapp_message(command_text)
 
             transcription = command_text
             structured_output = extract_tasks(transcription)

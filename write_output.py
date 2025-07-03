@@ -1,5 +1,5 @@
 from auth import authorize
-from config import SPREADSHEET_ID
+from config import SPREADSHEET_ID, TEXT_INPUT_SHEET_ID
 
 
 def write_to_sheet(rows):
@@ -7,3 +7,8 @@ def write_to_sheet(rows):
     sheet = client.open_by_key(SPREADSHEET_ID).sheet1
     for row in rows:
         sheet.append_row(row)
+
+def log_whatsapp_message(message_text):
+    client = authorize()
+    sheet = client.open_by_key(TEXT_INPUT_SHEET_ID).sheet1
+    sheet.append_row([message_text])  # Adds message to column A, rest blank
