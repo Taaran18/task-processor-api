@@ -9,14 +9,14 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
 ]
 
+
 def authorize():
-    # Get the base64-encoded credentials from environment
     encoded = os.getenv("GOOGLE_CREDENTIALS_BASE64")
     if not encoded:
         raise ValueError("Missing GOOGLE_CREDENTIALS_BASE64 environment variable")
 
-    # Decode and write to temporary credentials file
     creds_data = base64.b64decode(encoded).decode("utf-8")
+
     with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as tmp:
         tmp.write(creds_data)
         tmp_path = tmp.name
