@@ -45,7 +45,14 @@ def parse_structured_output(structured_output, choice, source_link=""):
                     parts[7],
                 ]
                 if choice in ["audio", "text"]:
-                    row_data.append(source_link)
+                    matched_source = ""
+                    if source_link:
+                        for segment in source_link.strip().split("\n"):
+                            if parts[0].lower() in segment.lower():
+                                matched_source = segment.strip()
+                                break
+                    row_data.append(matched_source)
+
 
                 rows.append(row_data)
     return rows
