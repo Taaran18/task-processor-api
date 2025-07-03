@@ -12,4 +12,4 @@ def write_to_sheet(rows):
 def log_whatsapp_message(message_text):
     client = authorize()
     sheet = client.open_by_key(TEXT_INPUT_SHEET_ID).sheet1
-    sheet.append_row([message_text])  # saves in column A
+    sheet.append_row([message_text])
