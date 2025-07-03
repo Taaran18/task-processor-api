@@ -52,33 +52,36 @@ def process(req: ProcessRequest):
 async def receive_whatsapp(request: Request):
     try:
         data = await request.json()
+
+        # ✅ Navigate to the correct nested structure
         body = data.get("body", {})
         message_data = body.get("message", {})
         message_text = message_data.get("text", "")
+
         sender = body.get("user", {}).get("phone", "")
 
-        if isinstance(message_text, str) and message_text.lower().startswith("/task "):
-            command_text = message_text[6:]
+        # ✅ Check that message_text is a string and starts with /task
+        if isinstance(message_text, str) and message_text.strip().lower().startswith("/task "):
+            command_text = message_text.strip()[6:]  # Remove "/task "
 
-            # ✅ Log to text sheet
+            # ✅ Log raw message to TEXT_INPUT_SHEET_ID
             log_whatsapp_message(command_text)
 
-            # ✅ Process the message as a task
-            transcription = command_text
-            structured_output = extract_tasks(transcription)
-            rows = parse_structured_output(structured_output, "text", transcription)
+            # ✅ Process it into structured tasks
+            structured_output = extract_tasks(command_text)
+            rows = parse_structured_output(structured_output, "text", command_text)
             write_to_sheet(rows)
 
             return {
                 "status": "✅ Task processed from WhatsApp",
                 "tasks_added": len(rows),
-                "from": sender,
+                "from": sender
             }
 
         return {
             "status": "ignored",
             "reason": "No /task trigger in message or bad format",
-            "from": sender,
+            "from": sender
         }
 
     except Exception as e:
