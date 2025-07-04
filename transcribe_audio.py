@@ -18,7 +18,10 @@ def transcribe_audio(gdrive_url):
     if "html" in response.headers.get("Content-Type", ""):
         raise Exception("Invalid or private Google Drive audio file.")
 
-    with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_audio:
+    # ✅ Extract extension from the download URL
+    ext = os.path.splitext(download_url)[-1] or ".mp3"  # fallback to mp3
+
+    with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_audio:
         tmp_audio.write(response.content)
         tmp_audio_path = tmp_audio.name
 
