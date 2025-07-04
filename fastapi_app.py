@@ -71,6 +71,7 @@ def process(req: ProcessRequest):
             source_link = transcription
 
         structured_output = extract_tasks(transcription)
+        print("🧠 Full GPT output:\n", structured_output)
         rows = parse_structured_output(structured_output, choice, source_link)
         write_to_sheet(rows)
         return {"message": f"{len(rows)} structured tasks added."}

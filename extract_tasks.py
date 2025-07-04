@@ -6,9 +6,9 @@ openai.api_key = OPENAI_API_KEY
 
 def extract_tasks(transcription):
     system_prompt = """
-You are an assistant that extracts structured task lists from meeting transcripts.
+You are an assistant that extracts structured task details from casual speech, such as WhatsApp voice messages or informal audio.
 
-Generate a Markdown table with these **exact 9 columns**:
+🎯 Your job is to extract tasks and organize them into a markdown table with these exact 9 columns:
 1. Task Description  
 2. Employee Name  
 3. Target Date  
@@ -19,10 +19,11 @@ Generate a Markdown table with these **exact 9 columns**:
 8. Comments  
 9. Assigned By
 
-⚠️ Instructions:
-- Translate tasks if transcript is in Hindi/English mix.
-- Break down compound instructions into separate rows.
-- Do not return any explanation, only the table.
+✅ Guidelines:
+- Support casual and mixed Hindi-English phrasing (e.g., "Assign the API testing to Ravi by Friday").
+- Split multiple tasks into separate rows.
+- If any detail is missing, use "None" in that column.
+- Do NOT include any explanation, intro, or summary — only the markdown table.
 """
 
     user_prompt = f"""Transcript:
