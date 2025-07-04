@@ -16,13 +16,13 @@ def upload_to_drive(media_url):
     if response.status_code != 200:
         raise Exception("Failed to download audio from WhatsApp")
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as tmp:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
         tmp.write(response.content)
         tmp_path = tmp.name
 
     # Upload to Drive
     file_drive = drive.CreateFile(
-        {"parents": [{"id": FOLDER_ID}], "title": "whatsapp_audio.ogg"}
+        {"parents": [{"id": FOLDER_ID}], "title": "Audio.mp3"}
     )
     file_drive.SetContentFile(tmp_path)
     file_drive.Upload()

@@ -80,7 +80,7 @@ async def receive_whatsapp(request: Request):
             return {"status": "✅ Text task processed", "tasks_added": len(rows)}
 
         # 🎧 Handle Audio Message
-        elif message_type == "audio":
+        elif message_type == "document":
             media_url = message.get("url")
             if not media_url:
                 return {"status": "error", "reason": "Audio message has no media URL"}
