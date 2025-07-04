@@ -53,11 +53,11 @@ def process(req: ProcessRequest):
 async def receive_whatsapp(request: Request):
     try:
         data = await request.json()
-        print("📩 Raw Maytapi payload:", data)
+        print("📩 Payload:", data)
 
         message = data.get("message", {})
         message_type = message.get("type", "")
-        mime_type = message.get("mimetype", "")
+        mime_type = message.get("mime", "")  # ✅ FIX: correct key
         sender = data.get("user", {}).get("phone", "")
 
         # ✅ TEXT TASK
@@ -68,34 +68,43 @@ async def receive_whatsapp(request: Request):
             command_text.lower().startswith("/task ")
             or command_text.lower().startswith("task ")
         ):
-            if command_text.lower().startswith("/task "):
-                command_text = command_text[6:]
-            elif command_text.lower().startswith("task "):
-                command_text = command_text[5:]
+            command_text = (
+                command_text[6:]
+                if command_text.lower().startswith("/task ")
+                else command_text[5:]
+            )
 
             log_whatsapp_message(command_text)
             structured_output = extract_tasks(command_text)
             rows = parse_structured_output(structured_output, "text", command_text)
             write_to_sheet(rows)
 
-            return {"status": "✅ Text task processed", "tasks_added": len(rows)}
+            return {
+                "status": "✅ Text task processed",
+                "tasks_added": len(rows),
+                "from": sender,
+            }
 
-        # ✅ AUDIO TASK (as document with audio/mpeg)
-        if message_type == "document" and mime_type.startswith("audio/"):
+        # ✅ AUDIO TASK (document with audio mime)
+        elif message_type == "document" and mime_type.startswith("audio/"):
             media_url = message.get("url")
             if not media_url:
-                return {"status": "error", "reason": "No audio URL found"}  
+                return {"status": "error", "reason": "No audio URL found"}
 
-            # Download and upload to Drive
+            # Download + upload to Google Drive
             gdrive_url = upload_to_drive(media_url)
 
-            # Transcribe and process
+            # Transcribe + process
             transcription, source_link = transcribe_audio(gdrive_url)
             structured_output = extract_tasks(transcription)
             rows = parse_structured_output(structured_output, "audio", source_link)
             write_to_sheet(rows)
 
-            return {"status": "✅ Audio task processed", "tasks_added": len(rows)}
+            return {
+                "status": "✅ Audio task processed",
+                "tasks_added": len(rows),
+                "from": sender,
+            }
 
         return {
             "status": "ignored",
