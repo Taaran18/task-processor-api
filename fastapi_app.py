@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request ,BackgroundTasks
 from pydantic import BaseModel
 from transcribe_audio import transcribe_audio
 from transcribe_text import transcribe_text
@@ -7,7 +7,22 @@ from parse_output import parse_structured_output
 from write_output import write_to_sheet, log_whatsapp_message  # ✅ new import
 from google_drive_uploader import upload_to_drive  # You’ll create this
 
+
 app = FastAPI()
+
+
+def process_text_task(text):
+    log_whatsapp_message(text)
+    structured_output = extract_tasks(text)
+    rows = parse_structured_output(structured_output, "text", text)
+    write_to_sheet(rows)
+
+def process_audio_task(media_url):
+    gdrive_url = upload_to_drive(media_url)
+    transcription, source_link = transcribe_audio(gdrive_url)
+    structured_output = extract_tasks(transcription)
+    rows = parse_structured_output(structured_output, "audio", source_link)
+    write_to_sheet(rows)
 
 
 class ProcessRequest(BaseModel):
@@ -50,68 +65,29 @@ def process(req: ProcessRequest):
 
 
 @app.post("/webhook")
-async def receive_whatsapp(request: Request):
+async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
     try:
         data = await request.json()
-        print("📩 Payload:", data)
-
         message = data.get("message", {})
         message_type = message.get("type", "")
-        mime_type = message.get("mime", "")  # ✅ FIX: correct key
+        mime_type = message.get("mime", "")
+        message_text = message.get("text", "")
         sender = data.get("user", {}).get("phone", "")
 
-        # ✅ TEXT TASK
-        message_text = message.get("text", "")
-        command_text = message_text.strip()
+        # ✅ TEXT task
+        if message_type == "text" and "task" in message_text.lower():
+            command_text = message_text.strip()
+            command_text = command_text[6:] if command_text.lower().startswith("/task ") else command_text[5:]
+            background_tasks.add_task(process_text_task, command_text)
+            return {"status": "✅ Task received", "from": sender}
 
-        if message_type == "text" and (
-            command_text.lower().startswith("/task ")
-            or command_text.lower().startswith("task ")
-        ):
-            command_text = (
-                command_text[6:]
-                if command_text.lower().startswith("/task ")
-                else command_text[5:]
-            )
-
-            log_whatsapp_message(command_text)
-            structured_output = extract_tasks(command_text)
-            rows = parse_structured_output(structured_output, "text", command_text)
-            write_to_sheet(rows)
-
-            return {
-                "status": "✅ Text task processed",
-                "tasks_added": len(rows),
-                "from": sender,
-            }
-
-        # ✅ AUDIO TASK (document with audio mime)
-        elif message_type == "document" and mime_type.startswith("audio/"):
+        # ✅ AUDIO task (document)
+        if message_type == "document" and mime_type.startswith("audio/"):
             media_url = message.get("url")
-            if not media_url:
-                return {"status": "error", "reason": "No audio URL found"}
+            background_tasks.add_task(process_audio_task, media_url)
+            return {"status": "✅ Audio task received", "from": sender}
 
-            # Download + upload to Google Drive
-            gdrive_url = upload_to_drive(media_url)
-
-            # Transcribe + process
-            transcription, source_link = transcribe_audio(gdrive_url)
-            structured_output = extract_tasks(transcription)
-            rows = parse_structured_output(structured_output, "audio", source_link)
-            write_to_sheet(rows)
-
-            return {
-                "status": "✅ Audio task processed",
-                "tasks_added": len(rows),
-                "from": sender,
-            }
-
-        return {
-            "status": "ignored",
-            "reason": "Not a valid task or unsupported media",
-            "from": sender,
-        }
+        return {"status": "ignored", "reason": "No task trigger", "from": sender}
 
     except Exception as e:
-        print("❌ Webhook Error:", str(e))
         return {"error": str(e)}

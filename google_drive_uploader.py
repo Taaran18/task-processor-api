@@ -6,7 +6,8 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
 
-FOLDER_ID = "1G_glXXIf_mjTjk7UwZlbGf6k9H-NiuPB"
+FOLDER_ID = os.getenv("FOLDER_ID")  # not hardcoded
+
 
 
 def upload_to_drive(media_url):
