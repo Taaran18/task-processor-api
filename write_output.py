@@ -6,6 +6,7 @@ def write_to_sheet(rows):
     client = authorize()
     sheet = client.open_by_key(SPREADSHEET_ID).sheet1
     for row in rows:
+        print("⬇️ Writing row to sheet:", row)  # Add this line
         sheet.append_row(row)
 
 
