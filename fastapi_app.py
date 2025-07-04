@@ -5,6 +5,7 @@ from transcribe_text import transcribe_text
 from extract_tasks import extract_tasks
 from parse_output import parse_structured_output
 from write_output import write_to_sheet, log_whatsapp_message  # ✅ new import
+from google_drive_uploader import upload_to_drive  # You’ll create this
 
 app = FastAPI()
 
@@ -54,27 +55,50 @@ async def receive_whatsapp(request: Request):
         data = await request.json()
         print("📩 Raw Maytapi payload:", data)
 
-        message_data = data.get("message", {})
-        message_text = message_data.get("text", "")
+        message = data.get("message", {})
+        message_type = message.get("type", "")
         sender = data.get("user", {}).get("phone", "")
 
+        # 📝 Handle Text-Based Tasks
+        message_text = message.get("text", "")
         command_text = message_text.strip()
-        if command_text.lower().startswith("/task "):
-            command_text = command_text[6:]
-        elif command_text.lower().startswith("task "):
-            command_text = command_text[5:]
-        else:
-            return {"status": "ignored", "reason": "No task trigger", "from": sender}
 
-        # Log and process
-        log_whatsapp_message(command_text)
-        structured_output = extract_tasks(command_text)
-        rows = parse_structured_output(structured_output, "text", command_text)
-        write_to_sheet(rows)
+        if message_type == "text" and (
+            command_text.lower().startswith("/task ")
+            or command_text.lower().startswith("task ")
+        ):
+            if command_text.lower().startswith("/task "):
+                command_text = command_text[6:]
+            elif command_text.lower().startswith("task "):
+                command_text = command_text[5:]
+
+            log_whatsapp_message(command_text)
+            structured_output = extract_tasks(command_text)
+            rows = parse_structured_output(structured_output, "text", command_text)
+            write_to_sheet(rows)
+
+            return {"status": "✅ Text task processed", "tasks_added": len(rows)}
+
+        # 🎧 Handle Audio Message
+        elif message_type == "audio":
+            media_url = message.get("url")
+            if not media_url:
+                return {"status": "error", "reason": "Audio message has no media URL"}
+
+            # 1. Download and upload to Google Drive
+            gdrive_url = upload_to_drive(media_url)
+
+            # 2. Transcribe and process as 'audio'
+            transcription, source_link = transcribe_audio(gdrive_url)
+            structured_output = extract_tasks(transcription)
+            rows = parse_structured_output(structured_output, "audio", source_link)
+            write_to_sheet(rows)
+
+            return {"status": "✅ Audio task processed", "tasks_added": len(rows)}
 
         return {
-            "status": "✅ Task processed from WhatsApp",
-            "tasks_added": len(rows),
+            "status": "ignored",
+            "reason": "Not a text or audio task",
             "from": sender,
         }
 
