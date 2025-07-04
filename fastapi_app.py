@@ -83,26 +83,43 @@ def process(req: ProcessRequest):
 async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
     try:
         data = await request.json()
+        print("📩 Payload:", data)
+
         message = data.get("message", {})
         message_type = message.get("type", "")
         mime_type = message.get("mime", "")
+        media_url = message.get("url")
         message_text = message.get("text", "")
         sender = data.get("user", {}).get("phone", "")
 
-        # ✅ TEXT task
-        if message_type == "text" and "task" in message_text.lower():
+        # ✅ Handle /task text
+        if message_type == "text" and message_text:
             command_text = message_text.strip()
-            command_text = command_text[6:] if command_text.lower().startswith("/task ") else command_text[5:]
-            background_tasks.add_task(process_text_task, command_text)
-            return {"status": "✅ Task received", "from": sender}
+            if command_text.lower().startswith("/task ") or command_text.lower().startswith("task "):
+                command_text = command_text[6:] if command_text.lower().startswith("/task ") else command_text[5:]
+                background_tasks.add_task(process_text_task, command_text)
+                return {"status": "✅ Text task received", "from": sender}
 
-        # ✅ AUDIO task (document)
-        if message_type == "document" and message_type == "ptt" and mime_type.startswith("audio/"):
-            media_url = message.get("url")
+        # ✅ Handle audio message from voice recording (ptt)
+        if message_type == "ptt" and mime_type.startswith("audio/"):
+            if not media_url:
+                return {"status": "error", "reason": "No audio URL for voice message"}
             background_tasks.add_task(process_audio_task, media_url)
-            return {"status": "✅ Audio task received", "from": sender}
+            return {"status": "✅ Voice recording received", "from": sender}
 
-        return {"status": "ignored", "reason": "No task trigger", "from": sender}
+        # ✅ Handle audio message sent as document
+        if message_type == "document" and mime_type.startswith("audio/"):
+            if not media_url:
+                return {"status": "error", "reason": "No audio URL for document"}
+            background_tasks.add_task(process_audio_task, media_url)
+            return {"status": "✅ Audio file received", "from": sender}
+
+        return {
+            "status": "ignored",
+            "reason": "No task trigger",
+            "from": sender
+        }
 
     except Exception as e:
+        print("❌ Webhook error:", str(e))
         return {"error": str(e)}
