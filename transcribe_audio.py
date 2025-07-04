@@ -8,7 +8,7 @@ openai.api_key = OPENAI_API_KEY
 
 
 def transcribe_audio(gdrive_url):
-    file_id = get_file_id(gdrive_url)
+    file_id = gdrive_url.split("/d/")[1].split("/")[0] if "/d/" in gdrive_url else None
     if not file_id:
         raise ValueError("Invalid Google Drive link.")
 
