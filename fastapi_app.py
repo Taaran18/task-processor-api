@@ -52,34 +52,29 @@ def process(req: ProcessRequest):
 async def receive_whatsapp(request: Request):
     try:
         data = await request.json()
-
-        # ✅ Log the raw payload
         print("📩 Raw Maytapi payload:", data)
 
-        body = data.get("body", {})
-        message_data = body.get("message", {})
+        message_data = data.get("message", {})
         message_text = message_data.get("text", "")
-        sender = body.get("user", {}).get("phone", "")
+        sender = data.get("user", {}).get("phone", "")
 
-        if isinstance(message_text, str) and message_text.strip().lower().startswith(
-            "/task "
-        ):
-            command_text = message_text.strip()[6:]
-            log_whatsapp_message(command_text)
+        command_text = message_text.strip()
+        if command_text.lower().startswith("/task "):
+            command_text = command_text[6:]
+        elif command_text.lower().startswith("task "):
+            command_text = command_text[5:]
+        else:
+            return {"status": "ignored", "reason": "No task trigger", "from": sender}
 
-            structured_output = extract_tasks(command_text)
-            rows = parse_structured_output(structured_output, "text", command_text)
-            write_to_sheet(rows)
-
-            return {
-                "status": "✅ Task processed from WhatsApp",
-                "tasks_added": len(rows),
-                "from": sender,
-            }
+        # Log and process
+        log_whatsapp_message(command_text)
+        structured_output = extract_tasks(command_text)
+        rows = parse_structured_output(structured_output, "text", command_text)
+        write_to_sheet(rows)
 
         return {
-            "status": "ignored",
-            "reason": "No /task trigger in message or bad format",
+            "status": "✅ Task processed from WhatsApp",
+            "tasks_added": len(rows),
             "from": sender,
         }
 
