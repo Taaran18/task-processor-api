@@ -10,8 +10,9 @@ def transcribe_text():
     all_rows = sheet.get_all_values()
     transcript_lines = []
 
-    # Define IST timezone
+    # Force Indian timezone
     ist = pytz.timezone("Asia/Kolkata")
+    now_ist = datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")
 
     for i, row in enumerate(all_rows, start=1):
         text = row[0].strip() if len(row) > 0 else ""
@@ -19,7 +20,7 @@ def transcribe_text():
         if text and status != "done":
             transcript_lines.append(text)
             sheet.update_cell(i, 2, "DONE")
-            sheet.update_cell(i, 3, datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S"))
+            sheet.update_cell(i, 3, now_ist)
 
     if not transcript_lines:
         raise ValueError("No new transcript lines found.")
