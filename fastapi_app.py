@@ -57,9 +57,10 @@ async def receive_whatsapp(request: Request):
 
         message = data.get("message", {})
         message_type = message.get("type", "")
+        mime_type = message.get("mimetype", "")
         sender = data.get("user", {}).get("phone", "")
 
-        # 📝 Handle Text-Based Tasks
+        # ✅ TEXT TASK
         message_text = message.get("text", "")
         command_text = message_text.strip()
 
@@ -79,16 +80,16 @@ async def receive_whatsapp(request: Request):
 
             return {"status": "✅ Text task processed", "tasks_added": len(rows)}
 
-        # 🎧 Handle Audio Message
-        elif message_type == "document":
+        # ✅ AUDIO TASK (as document with audio/mpeg)
+        if message_type == "document" and mime_type.startswith("audio/"):
             media_url = message.get("url")
             if not media_url:
-                return {"status": "error", "reason": "Audio message has no media URL"}
+                return {"status": "error", "reason": "No audio URL found"}  
 
-            # 1. Download and upload to Google Drive
+            # Download and upload to Drive
             gdrive_url = upload_to_drive(media_url)
 
-            # 2. Transcribe and process as 'audio'
+            # Transcribe and process
             transcription, source_link = transcribe_audio(gdrive_url)
             structured_output = extract_tasks(transcription)
             rows = parse_structured_output(structured_output, "audio", source_link)
@@ -98,7 +99,7 @@ async def receive_whatsapp(request: Request):
 
         return {
             "status": "ignored",
-            "reason": "Not a text or audio task",
+            "reason": "Not a valid task or unsupported media",
             "from": sender,
         }
 
