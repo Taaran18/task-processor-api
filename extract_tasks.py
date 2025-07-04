@@ -3,6 +3,7 @@ from config import OPENAI_API_KEY
 
 openai.api_key = OPENAI_API_KEY
 
+
 def extract_tasks(transcription):
     system_prompt = """
 You are an assistant that extracts structured task lists from meeting transcripts.
@@ -32,7 +33,7 @@ Generate a Markdown table with these **exact 9 columns**:
         model="chatgpt-4o-latest",
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
+            {"role": "user", "content": user_prompt},
         ],
         temperature=0.2,
     )

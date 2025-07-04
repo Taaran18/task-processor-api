@@ -9,7 +9,6 @@ from google.oauth2 import service_account
 FOLDER_ID = os.getenv("FOLDER_ID")  # not hardcoded
 
 
-
 def upload_to_drive(media_url):
     # ✅ Decode base64 credentials from env
     encoded = os.getenv("GOOGLE_CREDENTIALS_BASE64")
