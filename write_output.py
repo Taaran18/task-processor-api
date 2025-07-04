@@ -1,10 +1,9 @@
 from auth import authorize
-from config import OUTPUT_SHEET_ID
-from utils import get_india_timestamp
+from config import SPREADSHEET_ID
 
 def write_to_sheet(rows):
     if not rows:
         return
     client = authorize()
-    sheet = client.open_by_key(OUTPUT_SHEET_ID).sheet1
+    sheet = client.open_by_key(SPREADSHEET_ID).sheet1
     sheet.append_rows(rows, value_input_option="USER_ENTERED")
