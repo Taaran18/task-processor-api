@@ -2,6 +2,8 @@ from datetime import datetime
 import pytz
 from auth import authorize
 from config import TEXT_INPUT_SHEET_ID
+from utils import get_india_timestamp
+
 
 def transcribe_text():
     client = authorize()
@@ -21,7 +23,7 @@ def transcribe_text():
         if text and status != "done":
             transcript_lines.append(text)
             sheet.update_cell(i, 2, "DONE")
-            sheet.update_cell(i, 3, ist_timestamp)
+            sheet.update_cell(i, 3, get_india_timestamp())
 
     if not transcript_lines:
         raise ValueError("No new transcript lines found.")
