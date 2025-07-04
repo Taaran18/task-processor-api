@@ -52,6 +52,10 @@ def process(req: ProcessRequest):
 async def receive_whatsapp(request: Request):
     try:
         data = await request.json()
+
+        # ✅ Log the raw payload
+        print("📩 Raw Maytapi payload:", data)
+
         body = data.get("body", {})
         message_data = body.get("message", {})
         message_text = message_data.get("text", "")
@@ -61,10 +65,6 @@ async def receive_whatsapp(request: Request):
             "/task "
         ):
             command_text = message_text.strip()[6:]
-
-            # ✅ Add debug print
-            print("✅ Logging WhatsApp message:", command_text)
-
             log_whatsapp_message(command_text)
 
             structured_output = extract_tasks(command_text)
