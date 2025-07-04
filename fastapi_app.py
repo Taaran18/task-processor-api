@@ -97,7 +97,7 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
             return {"status": "✅ Task received", "from": sender}
 
         # ✅ AUDIO task (document)
-        if message_type == "document" and mime_type.startswith("audio/"):
+        if message_type == "document" and message_type == "ptt" and mime_type.startswith("audio/"):
             media_url = message.get("url")
             background_tasks.add_task(process_audio_task, media_url)
             return {"status": "✅ Audio task received", "from": sender}
