@@ -5,7 +5,6 @@ from config import OPENAI_API_KEY
 
 openai.api_key = OPENAI_API_KEY
 
-
 def transcribe_audio(gdrive_url):
     file_id = get_file_id(gdrive_url)
     if not file_id:
@@ -18,10 +17,14 @@ def transcribe_audio(gdrive_url):
     if "html" in response.headers.get("Content-Type", ""):
         raise Exception("Invalid or private Google Drive audio file.")
 
-    # ✅ Extract extension from the download URL
-    ext = os.path.splitext(download_url)[-1] or ".mp3"  # fallback to mp3
+    # ✅ Force proper extension based on content type
+    content_type = response.headers.get("Content-Type", "")
+    if "ogg" in content_type or "opus" in content_type:
+        suffix = ".oga"
+    else:
+        suffix = ".mp3"
 
-    with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_audio:
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp_audio:
         tmp_audio.write(response.content)
         tmp_audio_path = tmp_audio.name
 
