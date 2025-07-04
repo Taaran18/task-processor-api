@@ -2,14 +2,13 @@ import uuid
 from datetime import datetime
 from employee import load_employee_data
 import difflib
-
+from utils import get_india_timestamp
 
 def parse_structured_output(structured_output, choice, source_link=""):
     employee_data = load_employee_data()
     rows = []
     lines = structured_output.strip().split("\n")
 
-    # Preprocess the source link if it's text input
     source_segments = []
     if choice in ["audio", "text"] and source_link:
         source_segments = [
@@ -31,14 +30,12 @@ def parse_structured_output(structured_output, choice, source_link=""):
                 parts = [p.strip() for p in line.split(",") if p.strip()]
 
             if len(parts) >= 9:
-                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 task_id = uuid.uuid4().hex[:8]
                 emp_name = parts[1]
                 emp_email = employee_data.get(emp_name, "")
                 assigned_name = parts[8]
                 assigned_email = employee_data.get(assigned_name, "")
 
-                # Match the best source segment to the task description
                 matched_source = ""
                 if source_segments:
                     best_match = difflib.get_close_matches(
@@ -48,24 +45,20 @@ def parse_structured_output(structured_output, choice, source_link=""):
                         matched_source = best_match[0]
 
                 row_data = [
-                    now,  # Timestamp
-                    task_id,  # Task ID
-                    parts[0],  # Task Description
-                    emp_name,  # Employee Name
-                    emp_email,  # Employee Email
-                    parts[2],  # Target Date
-                    parts[3],  # Priority
-                    parts[4],  # Approval Needed
-                    parts[5],  # Client Name
-                    parts[6],  # Department
-                    assigned_name,  # Assigned By Name
-                    assigned_email,  # Assigned By Email
-                    parts[7],  # Comments
+                    get_india_timestamp(),     # Timestamp
+                    task_id,                   # Task ID
+                    parts[0],                  # Task Description
+                    emp_name,                  # Employee Name
+                    emp_email,                 # Email
+                    parts[2],                  # Target Date
+                    parts[3],                  # Priority
+                    parts[4],                  # Approval Needed
+                    parts[5],                  # Client Name
+                    parts[6],                  # Department
+                    assigned_name,             # Assigned By
+                    assigned_email,            # Email
+                    parts[7],                  # Comments
+                    matched_source or source_link  # Source Link (text or URL)
                 ]
-
-                if choice in ["audio", "text"]:
-                    row_data.append(matched_source)  # Source Link
-
                 rows.append(row_data)
-
     return rows

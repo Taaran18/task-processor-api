@@ -31,12 +31,11 @@ You are an assistant that extracts structured task details from casual speech, s
 """
 
     response = openai.ChatCompletion.create(
-        model="chatgpt-4o-latest",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
         temperature=0.2,
     )
-
     return response["choices"][0]["message"]["content"]

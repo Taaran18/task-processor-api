@@ -1,16 +1,10 @@
 from auth import authorize
-from config import SPREADSHEET_ID, TEXT_INPUT_SHEET_ID
-
+from config import OUTPUT_SHEET_ID
+from utils import get_india_timestamp
 
 def write_to_sheet(rows):
+    if not rows:
+        return
     client = authorize()
-    sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-    for row in rows:
-        print("⬇️ Writing row to sheet:", row)
-        sheet.append_row(row)
-
-
-def log_whatsapp_message(message_text):
-    client = authorize()
-    sheet = client.open_by_key(TEXT_INPUT_SHEET_ID).sheet1
-    sheet.append_row([message_text])
+    sheet = client.open_by_key(OUTPUT_SHEET_ID).sheet1
+    sheet.append_rows(rows, value_input_option="USER_ENTERED")
