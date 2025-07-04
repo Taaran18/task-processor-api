@@ -14,18 +14,16 @@ def transcribe_audio(gdrive_url):
     download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
     response = requests.get(download_url)
 
-    # Check for invalid file
     if "html" in response.headers.get("Content-Type", ""):
         raise Exception("Invalid or private Google Drive audio file.")
 
-    # Force .oga suffix for WhatsApp voice notes
-    suffix = ".oga" if ".oga" in download_url or "ogg" in response.headers.get("Content-Type", "") else ".mp3"
+    suffix = ".oga"
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_audio:
         tmp_audio.write(response.content)
         tmp_audio_path = tmp_audio.name
 
-    print("📥 Transcribing file:", tmp_audio_path)
+    print("📥 Whisper transcription started for:", tmp_audio_path)
 
     try:
         with open(tmp_audio_path, "rb") as audio_file:
@@ -40,6 +38,6 @@ def transcribe_audio(gdrive_url):
     transcription_text = transcript_response.get("text", "").strip()
 
     if not transcription_text:
-        raise Exception("Whisper returned empty transcription")
+        raise Exception("Whisper returned empty transcription.")
 
     return transcription_text, source_link

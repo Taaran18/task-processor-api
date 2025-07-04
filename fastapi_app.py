@@ -19,32 +19,26 @@ def process_text_task(text):
 
 def process_audio_task(media_url):
     try:
-        print("🎧 Starting process_audio_task with URL:", media_url)
-        
+        print("🎧 Starting voice/audio task:", media_url)
+
         gdrive_url = upload_to_drive(media_url)
         print("✅ Uploaded to Drive:", gdrive_url)
 
         transcription, source_link = transcribe_audio(gdrive_url)
-        if not transcription:
-            print("⚠️ No transcription returned. Skipping task generation.")
-            return
-
-        print("📝 Transcription:", transcription[:300])
+        print("📝 Transcription:", transcription[:100])
 
         structured_output = extract_tasks(transcription)
-        print("📋 Structured Output:", structured_output[:300])
+        print("📋 Extracted Tasks Output:", structured_output[:200])
 
         rows = parse_structured_output(structured_output, "audio", source_link)
-        print(f"✅ Parsed {len(rows)} task rows")
+        print(f"✅ Parsed {len(rows)} tasks")
 
-        if rows:
-            write_to_sheet(rows)
-            print("📤 Written to Google Sheet.")
-        else:
-            print("⚠️ No rows to write to sheet.")
+        write_to_sheet(rows)
+        print("📤 Sheet updated.")
 
     except Exception as e:
-        print("❌ ERROR in process_audio_task:", str(e))
+        print("❌ process_audio_task error:", str(e))
+
 
 
 
