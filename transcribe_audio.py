@@ -1,7 +1,6 @@
 import tempfile, os, requests
 import openai
 import ffmpeg
-from utils import get_file_id
 from config import OPENAI_API_KEY
 
 openai.api_key = OPENAI_API_KEY
