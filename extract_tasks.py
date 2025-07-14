@@ -6,18 +6,17 @@ openai.api_key = OPENAI_API_KEY
 
 def extract_tasks(transcription):
     system_prompt = """
-You are an assistant that extracts structured task lists from either paragraph descriptions or field-based task inputs.
+You are an assistant that extracts structured task lists from WhatsApp messages or voice transcripts.
 
 The input may be:
-- A paragraph like: "Assign Apurvi to design a media plan for iCraft by July 14."
-- Or a labeled list like:
-  Task Description: Media Plan
+- A paragraph, like: "Assign Apurvi to create a media plan by 14 July."
+- Or a bullet/field format, like:
+  Task Description: Create a media plan
   Employee Name: Apurvi Jain
   Target Date: 14-7
   Priority: Medium
 
-Your job is to convert the input into a Markdown table with **exactly 9 columns**:
-
+🎯 Your job is to extract tasks and organize them into a markdown table with these exact 9 columns:
 1. Task Description  
 2. Employee Name  
 3. Target Date  
@@ -28,11 +27,11 @@ Your job is to convert the input into a Markdown table with **exactly 9 columns*
 8. Comments  
 9. Assigned By
 
-⚠️ Rules:
-- If any field is missing, leave the column blank.
-- Never write explanations, just return the table.
-- Handle mixed Hindi/English if needed.
-- Always output a table even if only one task is found.
+✅ Guidelines:
+- Handle casual Hindi-English mix as well.
+- If any detail is missing, write "None" in that column.
+- Break down multiple tasks into separate rows if found.
+- DO NOT include explanations, summaries, or anything other than the markdown table.
 """
 
     user_prompt = f"""Transcript:
@@ -40,7 +39,7 @@ Your job is to convert the input into a Markdown table with **exactly 9 columns*
 """
 
     response = openai.ChatCompletion.create(
-        model="gpt-4.1-2025-04-14",
+        model="gpt-4.0",  # Or your default gpt-4 model
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
