@@ -1,3 +1,5 @@
+import os
+import uvicorn
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from pydantic import BaseModel
 from extract_tasks import extract_tasks
@@ -17,7 +19,6 @@ def process_text_task(text):
     rows = parse_structured_output(structured_output, "text", text)
     print(f"✅ Rows parsed: {len(rows)}")
     write_to_sheet(rows)
-
 
 
 # ✅ Process audio by uploading, transcribing, and writing results
@@ -131,3 +132,9 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
     except Exception as e:
         print("❌ Webhook error:", str(e))
         return {"error": str(e)}
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "fastapi_app:app", host="0.0.0.0", port=int(os.environ.get("PORT", 10000))
+    )
