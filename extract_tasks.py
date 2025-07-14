@@ -6,16 +6,18 @@ openai.api_key = OPENAI_API_KEY
 
 def extract_tasks(transcription):
     system_prompt = """
-You are an assistant that extracts structured task lists from either paragraph text or field-style messages.
+You are an assistant that extracts structured task lists from either paragraph descriptions or field-based task inputs.
 
-The input may look like:
-1. A paragraph describing one or more tasks
-2. A list of labeled fields like:
-   Task Description: ...
-   Employee Name: ...
-   Target Date: ...
+The input may be:
+- A paragraph like: "Assign Apurvi to design a media plan for iCraft by July 14."
+- Or a labeled list like:
+  Task Description: Media Plan
+  Employee Name: Apurvi Jain
+  Target Date: 14-7
+  Priority: Medium
 
-You must always extract the tasks into a Markdown table with exactly these 9 columns:
+Your job is to convert the input into a Markdown table with **exactly 9 columns**:
+
 1. Task Description  
 2. Employee Name  
 3. Target Date  
@@ -26,11 +28,11 @@ You must always extract the tasks into a Markdown table with exactly these 9 col
 8. Comments  
 9. Assigned By
 
-⚠️ Instructions:
-- Translate Hindi/English mix if needed.
-- Parse as many tasks as you can.
-- If only one task is found, output one row.
-- Never return explanations, only the markdown table.
+⚠️ Rules:
+- If any field is missing, leave the column blank.
+- Never write explanations, just return the table.
+- Handle mixed Hindi/English if needed.
+- Always output a table even if only one task is found.
 """
 
     user_prompt = f"""Transcript:
