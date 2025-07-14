@@ -11,13 +11,11 @@ app = FastAPI()
 
 # ✅ Process text immediately — write directly to output sheet
 def process_text_task(text):
-    print("🔹 Raw text input:", text)
     structured_output = extract_tasks(text)
-    print("📋 GPT Output:", structured_output)
-    rows = parse_structured_output(structured_output, "text", text)
-    print(f"✅ Rows parsed: {len(rows)}")
+    rows = parse_structured_output(
+        structured_output, "text", text
+    )  # 'text' used as source link
     write_to_sheet(rows)
-
 
 
 # ✅ Process audio by uploading, transcribing, and writing results
@@ -131,9 +129,3 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
     except Exception as e:
         print("❌ Webhook error:", str(e))
         return {"error": str(e)}
-
-import os
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("fastapi_app:app", host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
