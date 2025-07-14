@@ -9,3 +9,4 @@ python-dotenv
 pydrive
 ffmpeg-python
 pytz
+pandas
