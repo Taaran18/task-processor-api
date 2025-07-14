@@ -111,11 +111,11 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
                 return {"status": "✅ Text task received", "from": sender}
 
         # ✅ Handle voice recording (ptt)
-        if message_type == "ptt" and mime_type.startswith("audio/"):
+        if message_type in ["ptt", "audio", "document"] and mime_type.startswith("audio/"):
             if not media_url:
-                return {"status": "error", "reason": "No audio URL for voice message"}
+                return {"status": "error", "reason": "No audio URL found"}
             background_tasks.add_task(process_audio_task, media_url)
-            return {"status": "✅ Voice recording received", "from": sender}
+            return {"status": f"✅ {message_type} audio received", "from": sender}
 
         # ✅ Handle audio file (as document)
         if message_type == "document" and mime_type.startswith("audio/"):
