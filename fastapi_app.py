@@ -11,9 +11,13 @@ app = FastAPI()
 
 # ✅ Process text immediately — write directly to output sheet
 def process_text_task(text):
+    print("🔹 Raw text input:", text)
     structured_output = extract_tasks(text)
-    rows = parse_structured_output(structured_output, "text", text)  # 'text' used as source link
+    print("📋 GPT Output:", structured_output)
+    rows = parse_structured_output(structured_output, "text", text)
+    print(f"✅ Rows parsed: {len(rows)}")
     write_to_sheet(rows)
+
 
 
 # ✅ Process audio by uploading, transcribing, and writing results
@@ -97,8 +101,14 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
         # ✅ Process /task text messages directly — write to output sheet
         if message_type == "text" and message_text:
             command_text = message_text.strip()
-            if command_text.lower().startswith("/task ") or command_text.lower().startswith("task "):
-                command_text = command_text[6:] if command_text.lower().startswith("/task ") else command_text[5:]
+            if command_text.lower().startswith(
+                "/task "
+            ) or command_text.lower().startswith("task "):
+                command_text = (
+                    command_text[6:]
+                    if command_text.lower().startswith("/task ")
+                    else command_text[5:]
+                )
                 background_tasks.add_task(process_text_task, command_text)
                 return {"status": "✅ Text task received", "from": sender}
 
@@ -116,11 +126,7 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
             background_tasks.add_task(process_audio_task, media_url)
             return {"status": "✅ Audio file received", "from": sender}
 
-        return {
-            "status": "ignored",
-            "reason": "No task trigger",
-            "from": sender
-        }
+        return {"status": "ignored", "reason": "No task trigger", "from": sender}
 
     except Exception as e:
         print("❌ Webhook error:", str(e))
