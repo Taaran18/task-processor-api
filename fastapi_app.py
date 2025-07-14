@@ -131,3 +131,9 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
     except Exception as e:
         print("❌ Webhook error:", str(e))
         return {"error": str(e)}
+
+import os
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("fastapi_app:app", host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
