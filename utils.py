@@ -1,12 +1,9 @@
 from datetime import datetime
 import pytz
-import uuid
 
 
 def get_india_timestamp():
-    india = pytz.timezone("Asia/Kolkata")
-    return datetime.now(india).strftime("%d/%m/%Y %H:%M:%S")
-
-
-def generate_task_id():
-    return str(uuid.uuid4())[:8]
+    utc_now = datetime.utcnow()
+    ist = pytz.timezone("Asia/Kolkata")
+    ist_now = pytz.utc.localize(utc_now).astimezone(ist)
+    return ist_now.strftime("%Y-%m-%d %H:%M:%S")

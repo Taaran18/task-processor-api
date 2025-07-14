@@ -1,72 +1,65 @@
-import re
-import pandas as pd
-from io import StringIO
-from utils import get_india_timestamp, generate_task_id
+import uuid
+from datetime import datetime
+from employee import load_employee_data
+import difflib
+from utils import get_india_timestamp
 
 
-def parse_structured_output(markdown_text, input_type, source):
-    """
-    Parses GPT's markdown table output and returns structured rows
-    ready for appending to Google Sheets.
-    """
+def parse_structured_output(structured_output, choice, source_link=""):
+    employee_data = load_employee_data()
     rows = []
+    lines = structured_output.strip().split("\n")
 
-    # Try to extract markdown table using regex
-    table_match = re.search(r"\|(.+\|)+\n\|([-:| ]+)\n((?:\|.*\n)+)", markdown_text)
-    if table_match:
-        header = table_match.group(1)
-        body = table_match.group(3)
-        raw_table = f"|{header}\n|{'---|' * (header.count('|'))}\n{body}"
-        try:
-            df = pd.read_csv(
-                StringIO(raw_table), sep="|", engine="python", skipinitialspace=True
-            )
-            df = df.dropna(how="all", axis=1).dropna(how="all", axis=0)
-            df.columns = [col.strip() for col in df.columns]
+    source_segments = []
+    if choice in ["audio", "text"] and source_link:
+        source_segments = [
+            s.strip() for s in source_link.strip().split("\n") if s.strip()
+        ]
 
-            for _, row in df.iterrows():
-                rows.append(
-                    {
-                        "Timestamp": get_india_timestamp(),
-                        "Task ID": generate_task_id(),
-                        "Task Description": row.get("Task Description", "None").strip(),
-                        "Employee Name": row.get("Employee Name", "None").strip(),
-                        "Employee Email ID": "None",
-                        "Target Date": row.get("Target Date", "None").strip(),
-                        "Priority": row.get("Priority", "None").strip(),
-                        "Approval Needed": row.get("Approval Needed", "None").strip(),
-                        "Client Name": row.get("Client Name", "None").strip(),
-                        "Department": row.get("Department", "None").strip(),
-                        "Assigned Name": row.get("Assigned By", "None").strip(),
-                        "Assigned Email ID": "None",
-                        "Comments": row.get("Comments", "None").strip(),
-                        "Source Link": source,
-                    }
-                )
+    for line in lines:
+        if line.strip() == "" or "---" in line:
+            continue
+        if "Task Description" in line and "Employee Name" in line:
+            continue
 
-        except Exception as e:
-            print("❌ Error parsing markdown table:", str(e))
+        if any(d in line for d in ["|", "\t", ","]):
+            if "|" in line:
+                parts = [p.strip() for p in line.split("|") if p.strip()]
+            elif "\t" in line:
+                parts = [p.strip() for p in line.split("\t") if p.strip()]
+            else:
+                parts = [p.strip() for p in line.split(",") if p.strip()]
 
-    # Fallback if no table parsed or GPT missed formatting
-    if not rows:
-        print("⚠️ No markdown table found. Using fallback row.")
-        rows.append(
-            {
-                "Timestamp": get_india_timestamp(),
-                "Task ID": generate_task_id(),
-                "Task Description": "None",
-                "Employee Name": "None",
-                "Employee Email ID": "None",
-                "Target Date": "None",
-                "Priority": "None",
-                "Approval Needed": "None",
-                "Client Name": "None",
-                "Department": "None",
-                "Assigned Name": "None",
-                "Assigned Email ID": "None",
-                "Comments": "None",
-                "Source Link": source.strip(),
-            }
-        )
+            if len(parts) >= 9:
+                task_id = uuid.uuid4().hex[:8]
+                emp_name = parts[1]
+                emp_email = employee_data.get(emp_name, "")
+                assigned_name = parts[8]
+                assigned_email = employee_data.get(assigned_name, "")
 
+                matched_source = ""
+                if source_segments:
+                    best_match = difflib.get_close_matches(
+                        parts[0], source_segments, n=1, cutoff=0.3
+                    )
+                    if best_match:
+                        matched_source = best_match[0]
+
+                row_data = [
+                    get_india_timestamp(),  # Timestamp
+                    task_id,  # Task ID
+                    parts[0],  # Task Description
+                    emp_name,  # Employee Name
+                    emp_email,  # Email
+                    parts[2],  # Target Date
+                    parts[3],  # Priority
+                    parts[4],  # Approval Needed
+                    parts[5],  # Client Name
+                    parts[6],  # Department
+                    assigned_name,  # Assigned By
+                    assigned_email,  # Email
+                    parts[7],  # Comments
+                    matched_source or source_link,  # Source Link (text or URL)
+                ]
+                rows.append(row_data)
     return rows

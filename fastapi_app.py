@@ -5,54 +5,8 @@ from parse_output import parse_structured_output
 from write_output import write_to_sheet
 from transcribe_audio import transcribe_audio
 from google_drive_uploader import upload_to_drive
-import re
 
 app = FastAPI()
-
-
-# ✅ Detect if message is in field-style format
-def is_field_style(text: str):
-    return any(
-        key in text.lower()
-        for key in ["task description:", "employee name:", "target date:"]
-    )
-
-
-# ✅ Parse field-style formatted task
-def parse_field_style(text: str):
-    fields = {
-        "Task Description": "None",
-        "Employee Name": "None",
-        "Target Date": "None",
-        "Priority": "None",
-        "Approval Needed": "None",
-        "Client Name": "None",
-        "Department": "None",
-        "Comments": "None",
-        "Assigned By": "None",
-    }
-    for line in text.splitlines():
-        match = re.match(r"^(.+?):\s*(.+)", line.strip())
-        if match:
-            key, value = match.groups()
-            key = key.strip().title()
-            if key in fields:
-                fields[key] = value.strip()
-
-    return [
-        [
-            fields["Task Description"],
-            fields["Employee Name"],
-            fields["Target Date"],
-            fields["Priority"],
-            fields["Approval Needed"],
-            fields["Client Name"],
-            fields["Department"],
-            fields["Comments"],
-            fields["Assigned By"],
-            text,  # Use full message as source
-        ]
-    ]
 
 
 # ✅ Process text immediately — write directly to output sheet
@@ -89,7 +43,7 @@ def process_audio_task(media_url):
         print("❌ process_audio_task error:", str(e))
 
 
-# 🧪 Manual processing API (Postman-compatible)
+# 🧪 For manual testing via Postman or other clients
 class ProcessRequest(BaseModel):
     choice: str  # "audio" or "text"
     gdrive_url: str | None = None
@@ -143,7 +97,7 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
         message_text = message.get("text", "")
         sender = data.get("user", {}).get("phone", "")
 
-        # ✅ Handle /task text messages (paragraph or field-style)
+        # ✅ Process /task text messages directly — write to output sheet
         if message_type == "text" and message_text:
             command_text = message_text.strip()
             if command_text.lower().startswith(
@@ -154,27 +108,17 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
                     if command_text.lower().startswith("/task ")
                     else command_text[5:]
                 )
-                command_text = command_text.strip()
+                background_tasks.add_task(process_text_task, command_text)
+                return {"status": "✅ Text task received", "from": sender}
 
-                if is_field_style(command_text):
-                    rows = parse_field_style(command_text)
-                    background_tasks.add_task(write_to_sheet, rows)
-                    return {"status": "✅ Field-style task recorded", "rows": len(rows)}
-                else:
-                    background_tasks.add_task(process_text_task, command_text)
-                    return {
-                        "status": "✅ Paragraph-style task received",
-                        "from": sender,
-                    }
-
-        # ✅ Handle WhatsApp voice recordings (ptt)
+        # ✅ Handle voice recording (ptt)
         if message_type == "ptt" and mime_type.startswith("audio/"):
             if not media_url:
                 return {"status": "error", "reason": "No audio URL for voice message"}
             background_tasks.add_task(process_audio_task, media_url)
             return {"status": "✅ Voice recording received", "from": sender}
 
-        # ✅ Handle WhatsApp audio file (sent as document)
+        # ✅ Handle audio file (as document)
         if message_type == "document" and mime_type.startswith("audio/"):
             if not media_url:
                 return {"status": "error", "reason": "No audio URL for document"}
