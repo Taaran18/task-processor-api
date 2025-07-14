@@ -16,11 +16,13 @@ def main():
     elif choice == "text":
         transcription = transcribe_text()
         source_link = transcription
-
     else:
         raise ValueError("Invalid input. Use 'audio' or 'text'.")
 
+    print("📥 Input Text:", transcription)
     structured_output = extract_tasks(transcription)
+    print("📋 Extracted Task Table:\n", structured_output)
+
     rows = parse_structured_output(structured_output, choice, source_link)
     write_to_sheet(rows)
     print(f"✅ {len(rows)} structured tasks added to your Google Sheet.")
