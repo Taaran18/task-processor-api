@@ -19,6 +19,7 @@ def process_text_task(text):
     write_to_sheet(rows)
 
 
+
 # ✅ Process audio by uploading, transcribing, and writing results
 def process_audio_task(media_url):
     try:
