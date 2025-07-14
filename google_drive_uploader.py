@@ -1,56 +1,54 @@
 import os
-import requests
 import tempfile
+import base64
+import requests
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from google.oauth2.service_account import Credentials
-from config import GOOGLE_CREDENTIALS_BASE64, FOLDER_ID
+from google.oauth2 import service_account
+
+FOLDER_ID = os.getenv("FOLDER_ID")  # not hardcoded
 
 
-def upload_to_drive(file_url):
-    # Step 1: Download the audio file
-    response = requests.get(file_url)
-    if response.status_code != 200:
-        raise Exception(f"Failed to download file from {file_url}")
+def upload_to_drive(media_url):
+    # ✅ Decode base64 credentials from env
+    encoded = os.getenv("GOOGLE_CREDENTIALS_BASE64")
+    if not encoded:
+        raise Exception("Missing GOOGLE_CREDENTIALS_BASE64 environment variable")
 
-    content_type = response.headers.get("Content-Type", "")
-    ext = ".oga" if "ogg" in content_type else ".mp3"
+    creds_data = base64.b64decode(encoded).decode("utf-8")
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp_file:
-        tmp_file.write(response.content)
-        tmp_file_path = tmp_file.name
+    # ✅ Write to a temp file
+    with tempfile.NamedTemporaryFile(delete=False, mode="w", suffix=".json") as tmp:
+        tmp.write(creds_data)
+        tmp_path = tmp.name
 
-    # Step 2: Decode credentials from environment variable
-    import base64, json
-
-    creds_json = base64.b64decode(GOOGLE_CREDENTIALS_BASE64).decode("utf-8")
-    creds_dict = json.loads(creds_json)
-
-    creds = Credentials.from_service_account_info(
-        creds_dict, scopes=["https://www.googleapis.com/auth/drive"]
+    # ✅ Load credentials
+    creds = service_account.Credentials.from_service_account_file(
+        tmp_path, scopes=["https://www.googleapis.com/auth/drive"]
     )
 
-    # Step 3: Build Drive API client
-    service = build("drive", "v3", credentials=creds)
+    drive_service = build("drive", "v3", credentials=creds)
 
-    filename = os.path.basename(tmp_file_path)
-    file_metadata = {
-        "name": filename,
-        "parents": [FOLDER_ID],  # 👈 Must be a folder inside a Shared Drive
-    }
+    # ✅ Download the file from WhatsApp media URL
+    response = requests.get(media_url)
+    if response.status_code != 200:
+        raise Exception("Failed to download audio from WhatsApp")
 
-    media = MediaFileUpload(tmp_file_path, resumable=True)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as audio_file:
+        audio_file.write(response.content)
+        audio_path = audio_file.name
 
-    # Step 4: Upload the file
-    file = (
-        service.files()
+    # ✅ Upload to Drive
+    file_metadata = {"name": os.path.basename(audio_path), "parents": [FOLDER_ID]}
+    media = MediaFileUpload(audio_path, mimetype="audio/mpeg")
+    uploaded = (
+        drive_service.files()
         .create(body=file_metadata, media_body=media, fields="id")
         .execute()
     )
 
-    file_id = file.get("id")
+    os.remove(audio_path)
+    os.remove(tmp_path)
 
-    # Step 5: Build and return the file's shared Drive URL
-    drive_link = f"https://drive.google.com/file/d/{file_id}/view"
-    os.remove(tmp_file_path)  # Clean up
-    return drive_link
+    file_id = uploaded.get("id")
+    return f"https://drive.google.com/file/d/{file_id}/view"
