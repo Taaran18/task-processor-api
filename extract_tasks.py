@@ -6,11 +6,9 @@ openai.api_key = OPENAI_API_KEY
 
 def extract_tasks(transcription):
     system_prompt = """
-You are an assistant that extracts structured task details from two types of user input:
-1. Casual/natural language (e.g. WhatsApp voice or paragraph text)
-2. Field-based task entries (e.g., 'Task Description: ...', 'Employee Name: ...')
+You are an assistant that extracts structured task details from casual speech, such as WhatsApp voice messages or informal audio.
 
-🎯 Your job is to extract all tasks and convert them into a markdown table with these 9 columns:
+🎯 Your job is to extract tasks and organize them into a markdown table with these exact 9 columns:
 1. Task Description  
 2. Employee Name  
 3. Target Date  
@@ -22,19 +20,18 @@ You are an assistant that extracts structured task details from two types of use
 9. Assigned By
 
 ✅ Guidelines:
-- Always generate a markdown table.
-- Accept both paragraph and key:value formats.
-- If any column is missing, fill with "None".
-- Never return explanations — only the table.
+- Support casual and mixed Hindi-English phrasing (e.g., "Assign the API testing to Ravi by Friday").
+- Split multiple tasks into separate rows.
+- If any detail is missing, use "None" in that column.
+- Do NOT include any explanation, intro, or summary — only the markdown table.
 """
-
 
     user_prompt = f"""Transcript:
 {transcription}
 """
 
     response = openai.ChatCompletion.create(
-        model="chatgpt-4o-latest",
+        model="gpt-4.1-2025-04-14",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
