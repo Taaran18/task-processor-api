@@ -1,7 +1,6 @@
 from datetime import datetime
 import pytz
 
-
 def get_india_timestamp():
     utc_now = datetime.utcnow()
     ist = pytz.timezone("Asia/Kolkata")

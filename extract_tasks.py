@@ -31,7 +31,7 @@ You are an assistant that extracts structured task details from casual speech, s
 """
 
     response = openai.ChatCompletion.create(
-        model="gpt-4.1-2025-04-14",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},

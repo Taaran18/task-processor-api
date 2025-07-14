@@ -4,7 +4,6 @@ from employee import load_employee_data
 import difflib
 from utils import get_india_timestamp
 
-
 def parse_structured_output(structured_output, choice, source_link=""):
     employee_data = load_employee_data()
     rows = []
@@ -46,20 +45,20 @@ def parse_structured_output(structured_output, choice, source_link=""):
                         matched_source = best_match[0]
 
                 row_data = [
-                    get_india_timestamp(),  # Timestamp
-                    task_id,  # Task ID
-                    parts[0],  # Task Description
-                    emp_name,  # Employee Name
-                    emp_email,  # Email
-                    parts[2],  # Target Date
-                    parts[3],  # Priority
-                    parts[4],  # Approval Needed
-                    parts[5],  # Client Name
-                    parts[6],  # Department
-                    assigned_name,  # Assigned By
-                    assigned_email,  # Email
-                    parts[7],  # Comments
-                    matched_source or source_link,  # Source Link (text or URL)
+                    get_india_timestamp(),     # Timestamp
+                    task_id,                   # Task ID
+                    parts[0],                  # Task Description
+                    emp_name,                  # Employee Name
+                    emp_email,                 # Email
+                    parts[2],                  # Target Date
+                    parts[3],                  # Priority
+                    parts[4],                  # Approval Needed
+                    parts[5],                  # Client Name
+                    parts[6],                  # Department
+                    assigned_name,             # Assigned By
+                    assigned_email,            # Email
+                    parts[7],                  # Comments
+                    matched_source or source_link  # Source Link (text or URL)
                 ]
                 rows.append(row_data)
     return rows

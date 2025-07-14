@@ -1,7 +1,6 @@
 from auth import authorize
 from config import SPREADSHEET_ID
 
-
 def write_to_sheet(rows):
     if not rows:
         return
