@@ -1,6 +1,7 @@
 import uuid
-import difflib
+from datetime import datetime
 from employee import load_employee_data
+import difflib
 from utils import get_india_timestamp
 
 
@@ -21,7 +22,6 @@ def parse_structured_output(structured_output, choice, source_link=""):
         if "Task Description" in line and "Employee Name" in line:
             continue
 
-        # Detect table-like row
         if any(d in line for d in ["|", "\t", ","]):
             if "|" in line:
                 parts = [p.strip() for p in line.split("|") if p.strip()]
@@ -30,12 +30,7 @@ def parse_structured_output(structured_output, choice, source_link=""):
             else:
                 parts = [p.strip() for p in line.split(",") if p.strip()]
 
-            # ✅ Accept partially filled rows (minimum 3: desc, emp, assigned)
-            if len(parts) >= 3:
-                # Pad missing values to 9
-                while len(parts) < 9:
-                    parts.append("")
-
+            if len(parts) >= 9:
                 task_id = uuid.uuid4().hex[:8]
                 emp_name = parts[1]
                 emp_email = employee_data.get(emp_name, "")
@@ -51,8 +46,8 @@ def parse_structured_output(structured_output, choice, source_link=""):
                         matched_source = best_match[0]
 
                 row_data = [
-                    get_india_timestamp(),  # ✅ Timestamp
-                    task_id,  # ✅ Unique Task ID
+                    get_india_timestamp(),  # Timestamp
+                    task_id,  # Task ID
                     parts[0],  # Task Description
                     emp_name,  # Employee Name
                     emp_email,  # Email
@@ -64,7 +59,7 @@ def parse_structured_output(structured_output, choice, source_link=""):
                     assigned_name,  # Assigned By
                     assigned_email,  # Email
                     parts[7],  # Comments
-                    matched_source or source_link,  # Source Link
+                    matched_source or source_link,  # Source Link (text or URL)
                 ]
                 rows.append(row_data)
     return rows
