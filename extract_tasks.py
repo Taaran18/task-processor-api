@@ -6,15 +6,12 @@ openai.api_key = OPENAI_API_KEY
 
 def extract_tasks(transcription):
     system_prompt = """
-You are an assistant that extracts structured task lists from WhatsApp messages or voice transcripts.
-
-The input may be:
-- A paragraph, like: "Assign Apurvi to create a media plan by 14 July."
-- Or a bullet/field format, like:
-  Task Description: Create a media plan
-  Employee Name: Apurvi Jain
-  Target Date: 14-7
-  Priority: Medium
+You are an assistant that extracts structured task information from either:
+- informal natural language (like WhatsApp voice notes)
+- OR structured field-based formats like:
+  Task Description: ...
+  Employee Name: ...
+  Target Date: ...
 
 🎯 Your job is to extract tasks and organize them into a markdown table with these exact 9 columns:
 1. Task Description  
@@ -28,10 +25,10 @@ The input may be:
 9. Assigned By
 
 ✅ Guidelines:
-- Handle casual Hindi-English mix as well.
-- If any detail is missing, write "None" in that column.
-- Break down multiple tasks into separate rows if found.
-- DO NOT include explanations, summaries, or anything other than the markdown table.
+- Support both free-form speech and field-style input.
+- Treat field-style data as a direct task.
+- If any field is missing, use "None".
+- Never write explanations. Only return the markdown table.
 """
 
     user_prompt = f"""Transcript:
