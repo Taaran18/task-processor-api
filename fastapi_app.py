@@ -11,13 +11,11 @@ app = FastAPI()
 
 # ✅ Process text immediately — write directly to output sheet
 def process_text_task(text):
-    print("🔹 Raw text input:", text)
     structured_output = extract_tasks(text)
-    print("📋 GPT Output:", structured_output)
-    rows = parse_structured_output(structured_output, "text", text)
-    print(f"✅ Rows parsed: {len(rows)}")
+    rows = parse_structured_output(
+        structured_output, "text", text
+    )  # 'text' used as source link
     write_to_sheet(rows)
-
 
 
 # ✅ Process audio by uploading, transcribing, and writing results
